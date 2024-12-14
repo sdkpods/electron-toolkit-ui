@@ -6,6 +6,8 @@
  * to expose Node.js functionality from the main process.
  */
 
+const { ipcRenderer } = require('electron')
+
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
@@ -45,4 +47,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set initial theme from localStorage or default to dark
   const savedTheme = localStorage.getItem('theme') || 'dark'
   setTheme(savedTheme)
+
+  // DevTools toggle functionality
+  const devToolsBtn = document.getElementById('devtools-toggle')
+  devToolsBtn.addEventListener('click', () => {
+    ipcRenderer.send('toggle-devtools')
+  })
 })
