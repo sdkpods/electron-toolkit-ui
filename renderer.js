@@ -28,11 +28,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Update icons visibility
     if (theme === 'dark') {
-      moonIcon.classList.remove('hidden')
-      sunIcon.classList.add('hidden')
+      moonIcon.style.display = 'block'
+      sunIcon.style.display = 'none'
     } else {
-      moonIcon.classList.add('hidden')
-      sunIcon.classList.remove('hidden')
+      moonIcon.style.display = 'none'
+      sunIcon.style.display = 'block'
     }
   }
 
