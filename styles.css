@@ -621,6 +621,10 @@ body {
   margin-bottom: 2rem;
 }
 
+.block {
+  display: block;
+}
+
 .flex {
   display: flex;
 }
@@ -721,6 +725,10 @@ body {
 
 .bg-secondary {
   background-color: hsl(var(--secondary));
+}
+
+.p-0 {
+  padding: 0px;
 }
 
 .p-24 {
