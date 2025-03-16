@@ -6,13 +6,19 @@
  *
  * https://www.electronjs.org/docs/latest/tutorial/sandbox
  */
-window.addEventListener('DOMContentLoaded', () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector)
-    if (element) element.innerText = text
-  }
+const { contextBridge, ipcRenderer } = require('electron')
 
-  for (const type of ['chrome', 'node', 'electron']) {
-    replaceText(`${type}-version`, process.versions[type])
+// 暴露API给渲染进程
+contextBridge.exposeInMainWorld('electronAPI', {
+  previewFile: (filePath) => ipcRenderer.send('preview-file', filePath),
+  toggleDevTools: () => ipcRenderer.send('toggle-devtools'),
+  versions: {
+    node: () => process.versions.node,
+    chrome: () => process.versions.chrome,
+    electron: () => process.versions.electron
   }
+})
+
+window.addEventListener('DOMContentLoaded', () => {
+  // 这部分代码不再需要，因为我们已经通过contextBridge暴露了process.versions
 })

@@ -6,17 +6,16 @@
  * to expose Node.js functionality from the main process.
  */
 
-const { ipcRenderer } = require('electron')
-
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
     if (element) element.innerText = text
   }
 
-  for (const type of ['chrome', 'node', 'electron']) {
-    replaceText(`${type}-version`, process.versions[type])
-  }
+  // 使用通过contextBridge暴露的versions API
+  replaceText('node-version', window.electronAPI.versions.node())
+  replaceText('chrome-version', window.electronAPI.versions.chrome())
+  replaceText('electron-version', window.electronAPI.versions.electron())
 
   // Theme toggling functionality
   const themeToggleBtn = document.getElementById('theme-toggle')
@@ -51,6 +50,14 @@ window.addEventListener('DOMContentLoaded', () => {
   // DevTools toggle functionality
   const devToolsBtn = document.getElementById('devtools-toggle')
   devToolsBtn.addEventListener('click', () => {
-    ipcRenderer.send('toggle-devtools')
+    window.electronAPI.toggleDevTools()
+  })
+
+  // 预览文件功能
+  const previewFileBtn = document.getElementById('preview-file')
+  previewFileBtn.addEventListener('click', () => {
+    // 指定要预览的文件路径
+    const filePath = '/Users/niugm/Downloads/666.docx'
+    window.electronAPI.previewFile(filePath)
   })
 })

@@ -11,8 +11,9 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   })
 
@@ -90,6 +91,13 @@ app.whenReady().then(() => {
   ipcMain.on('toggle-devtools', () => {
     if (mainWindow) {
       mainWindow.webContents.toggleDevTools()
+    }
+  })
+
+  // 处理预览文件请求
+  ipcMain.on('preview-file', (event, filePath) => {
+    if (mainWindow) {
+      mainWindow.previewFile(filePath, '可以指定名字')
     }
   })
 
