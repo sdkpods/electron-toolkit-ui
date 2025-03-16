@@ -57,7 +57,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const previewFileBtn = document.getElementById('preview-file')
   previewFileBtn.addEventListener('click', () => {
     // 指定要预览的文件路径
-    const filePath = '/Users/niugm/Downloads/666.docx'
+    // const filePath = '/Users/niugm/Downloads/666.docx'
+    const filePath = '/Users/niugm/Downloads/777.pptx'
     window.electronAPI.previewFile(filePath)
   })
 })
