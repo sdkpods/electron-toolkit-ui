@@ -1,9 +1,13 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron/main')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, BrowserView } = require('electron/main')
 const path = require('path')
 
 let mainWindow = null
 let tray = null
 let counter = 0
+
+// 默认边框样式
+let borderColor = '#3b82f6'; // 蓝色
+let borderWidth = 3;
 
 function createWindow() {
   // Create the browser window.
@@ -15,6 +19,73 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     }
+  })
+
+  // 创建 BrowserView 实例
+  const view = new BrowserView({
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  })
+  
+  // 将 BrowserView 添加到主窗口
+  mainWindow.setBrowserView(view)
+  
+  // 获取窗口大小
+  const bounds = mainWindow.getBounds()
+  
+  // 计算BrowserView宽度为窗口宽度的1/3
+  const viewWidth = Math.floor(bounds.width / 3)
+  
+  // 设置 BrowserView 的位置和大小，宽度为窗口的三分之一，放置在右侧
+  view.setBounds({ 
+    x: bounds.width - viewWidth, 
+    y: 100, 
+    width: viewWidth, 
+    height: bounds.height - 100
+  })
+  
+  // 启用滚动条
+  view.setAutoResize({
+    width: false,
+    height: false
+  })
+  
+  // 加载 Google 网站
+  view.webContents.loadURL('https://www.google.com')
+  
+  // 创建应用边框样式的函数
+  const applyBorderStyle = (contents) => {
+    if (contents) {
+      contents.insertCSS(`
+        html, body {
+          border: ${borderWidth}px solid ${borderColor};
+          border-radius: 8px;
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+      `)
+    }
+  }
+  
+  // 等待页面加载完成后添加边框样式
+  view.webContents.on('did-finish-load', () => {
+    // 为BrowserView添加边框样式
+    applyBorderStyle(view.webContents)
+  })
+
+  // 监听窗口大小变化，调整 BrowserView 大小
+  mainWindow.on('resize', () => {
+    const bounds = mainWindow.getBounds()
+    const viewWidth = Math.floor(bounds.width / 3)
+    view.setBounds({ 
+      x: bounds.width - viewWidth, 
+      y: 100, 
+      width: viewWidth, 
+      height: bounds.height - 100
+    })
   })
 
   // Load the index.html file
@@ -31,6 +102,104 @@ function createWindow() {
 app.whenReady().then(() => {
   console.log('App is ready, creating window...')
   mainWindow = createWindow()
+  
+  // 获取当前窗口的BrowserView
+  const getBrowserView = () => {
+    if (mainWindow) {
+      return mainWindow.getBrowserView()
+    }
+    return null
+  }
+  
+  // 处理导航到指定URL的请求
+  ipcMain.on('navigate-to', (event, url) => {
+    const view = getBrowserView()
+    if (view) {
+      view.webContents.loadURL(url)
+      // 监听页面加载完成事件，并应用边框样式
+      view.webContents.once('did-finish-load', () => {
+        applyBorderStyle(view.webContents)
+      })
+    }
+  })
+  
+  // 处理刷新页面请求
+  ipcMain.on('refresh-page', () => {
+    const view = getBrowserView()
+    if (view) {
+      view.webContents.reload()
+      // 监听页面加载完成事件，并应用边框样式
+      view.webContents.once('did-finish-load', () => {
+        applyBorderStyle(view.webContents)
+      })
+    }
+  })
+  
+  // 处理后退请求
+  ipcMain.on('go-back', () => {
+    const view = getBrowserView()
+    if (view && view.webContents.canGoBack()) {
+      view.webContents.goBack()
+      // 监听页面加载完成事件，并应用边框样式
+      view.webContents.once('did-finish-load', () => {
+        applyBorderStyle(view.webContents)
+      })
+    }
+  })
+  
+  // 处理前进请求
+  ipcMain.on('go-forward', () => {
+    const view = getBrowserView()
+    if (view && view.webContents.canGoForward()) {
+      view.webContents.goForward()
+      // 监听页面加载完成事件，并应用边框样式
+      view.webContents.once('did-finish-load', () => {
+        applyBorderStyle(view.webContents)
+      })
+    }
+  })
+  
+  // 处理调整BrowserView大小的请求
+  ipcMain.on('resize-browser-view', (event, widthPercentage) => {
+    const view = getBrowserView()
+    if (view && mainWindow) {
+      const bounds = mainWindow.getBounds()
+      const viewWidth = Math.floor(bounds.width * (widthPercentage / 100))
+      view.setBounds({
+        x: bounds.width - viewWidth,
+        y: 100,
+        width: viewWidth,
+        height: bounds.height - 100
+      })
+    }
+  })
+  
+  // 处理切换BrowserView位置的请求（左侧/右侧）
+  ipcMain.on('toggle-browser-view-position', (event) => {
+    const view = getBrowserView()
+    if (view && mainWindow) {
+      const bounds = mainWindow.getBounds()
+      const viewBounds = view.getBounds()
+      const isOnRight = (viewBounds.x > bounds.width / 2)
+      
+      // 如果当前在右侧，则移到左侧，反之亦然
+      if (isOnRight) {
+        view.setBounds({
+          x: 0,
+          y: viewBounds.y,
+          width: viewBounds.width,
+          height: viewBounds.height
+        })
+      } else {
+        view.setBounds({
+          x: bounds.width - viewBounds.width,
+          y: viewBounds.y,
+          width: viewBounds.width,
+          height: viewBounds.height
+        })
+      }
+    }
+  })
   
   // Create tray icon
   console.log('Creating tray...')
@@ -98,6 +267,27 @@ app.whenReady().then(() => {
   ipcMain.on('preview-file', (event, filePath) => {
     if (mainWindow) {
       mainWindow.previewFile(filePath, '可以指定名字')
+    }
+  })
+
+  // 处理设置边框样式的请求
+  ipcMain.on('set-border-style', (event, color, width) => {
+    const view = getBrowserView()
+    if (view) {
+      // 更新边框样式参数
+      if (color) borderColor = color;
+      if (width) borderWidth = width;
+      
+      // 重新应用样式
+      view.webContents.insertCSS(`
+        html, body {
+          border: ${borderWidth}px solid ${borderColor};
+          border-radius: 8px;
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+      `)
     }
   })
 

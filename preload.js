@@ -12,6 +12,13 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('electronAPI', {
   previewFile: (filePath) => ipcRenderer.send('preview-file', filePath),
   toggleDevTools: () => ipcRenderer.send('toggle-devtools'),
+  navigateTo: (url) => ipcRenderer.send('navigate-to', url),
+  refreshPage: () => ipcRenderer.send('refresh-page'),
+  goBack: () => ipcRenderer.send('go-back'),
+  goForward: () => ipcRenderer.send('go-forward'),
+  resizeBrowserView: (widthPercentage) => ipcRenderer.send('resize-browser-view', widthPercentage),
+  toggleBrowserViewPosition: () => ipcRenderer.send('toggle-browser-view-position'),
+  setBorderStyle: (color, width) => ipcRenderer.send('set-border-style', color, width),
   versions: {
     node: () => process.versions.node,
     chrome: () => process.versions.chrome,
